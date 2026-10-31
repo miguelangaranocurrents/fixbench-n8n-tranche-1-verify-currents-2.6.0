@@ -24,6 +24,12 @@ jobs:
         run: pnpm turbo run install-browsers --filter=n8n-playwright
 
       - name: Run e2e tests
+        env:
+          CURRENTS_RECORD_KEY: ${{ secrets.CURRENTS_RECORD_KEY }}
+          CURRENTS_PROJECT_ID: ${{ secrets.CURRENTS_PROJECT_ID }}
+          # SafeChain's pnpm shim proxies child processes for package installs only;
+          # the reporter's API calls and uploads must go direct.
+          NO_PROXY: .currents.dev,.r2.cloudflarestorage.com
         run: pnpm --filter=n8n-playwright test:local tests/e2e/workflows/editor/expressions tests/e2e/workflows/editor/subworkflows tests/e2e/nodes tests/e2e/credentials
 
       - name: Upload Playwright report
@@ -43,4 +49,12 @@ jobs:
         with:
           name: test-results
           path: packages/quality/testing/playwright/test-results.json
+          retention-days: 30
+
+      - name: Upload Currents report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: currents
+          path: packages/quality/testing/playwright/currents-report.json
           retention-days: 30
